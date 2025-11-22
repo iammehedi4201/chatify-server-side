@@ -51,9 +51,7 @@ const customerSchema = new Schema<ICustomer>(
   { timestamps: true },
 );
 
-// Add after customerSchema
-customerSchema.index({ user_id: 1 }, { unique: true });
-customerSchema.index({ email: 1 }, { unique: true });
+// Keep only additional indexes (these are fine)
 customerSchema.index({ "address.city": 1 });
 customerSchema.index({ isActive: 1 });
 

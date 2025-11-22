@@ -8,12 +8,9 @@ import { generateToken, verifyToken } from "@/helper/jwtHelper";
 import { performDBTransaction } from "@/Utils/performDBTransaction";
 import { CustomerRegisterPayload } from "../Customer/Customer.interface";
 import { Customer } from "../Customer/Customer.model";
-import { DeliveryMan } from "../DeliveryMan/DeliveryMan.model"; // add near other imports
 import { EmailVerification } from "../EmailVerification/EmailVerification.model";
 import { userRoles } from "../User/User.constant";
 import { User } from "../User/User.model";
-import { Vendor } from "../Vendor/Vendor.model"; // add import near other imports
-
 import { hashPassword } from "./../../helper/password.helper";
 
 //! Register Customer Service
@@ -70,196 +67,6 @@ const registerCustomerToDB = async (payLoad: CustomerRegisterPayload) => {
   await sendVerificationEmail(email, magicToken);
 
   return customer;
-};
-
-//! Create Vendor Service
-const createVendorToDB = async (payLoad: {
-  name: string;
-  email: string;
-  password: string;
-  phone: string | number;
-  store_name?: string;
-  paymentMethod?: any;
-  address?: any;
-  verification?: any;
-}) => {
-  const {
-    name,
-    email,
-    password,
-    phone,
-    store_name,
-    paymentMethod,
-    address,
-    verification,
-  } = payLoad;
-
-  const hashedPassword = await hashPassword(password);
-
-  const { user, vendor } = await performDBTransaction(async (session) => {
-    // If user exists, ensure not already vendor and upgrade role
-    let user = await User.findOne({ email }).session(session);
-
-    if (user) {
-      if (user.role === userRoles.Vendor) {
-        throw new AppError("Vendor already exists", 400);
-      }
-      // upgrade existing customer to vendor
-      user.role = userRoles.Vendor;
-      user.name = name || user.name;
-      user.password = hashedPassword;
-      await user.save({ session });
-    } else {
-      // create a new user as vendor
-      [user] = await User.create(
-        [
-          {
-            name,
-            email,
-            password: hashedPassword,
-            role: userRoles.Vendor,
-          },
-        ],
-        { session },
-      );
-    }
-
-    // Ensure no vendor record already exists for this user
-    const existingVendor = await Vendor.findOne({ user_id: user._id }).session(
-      session,
-    );
-    if (existingVendor) {
-      throw new AppError("Vendor already exists", 400);
-    }
-
-    // create vendor document
-    const [vendor] = await Vendor.create(
-      [
-        {
-          user_id: user._id,
-          name,
-          phone,
-          email,
-          store_name: store_name || "",
-          paymentMethod: paymentMethod || {},
-          address: address || {},
-          verification: verification || {},
-        },
-      ],
-      { session },
-    );
-
-    return { user, vendor };
-  });
-
-  // Generate Magic Link JWT
-  const magicToken = generateToken(
-    {
-      id: user._id,
-      email: user.email,
-    },
-    ENV.EMAIL_VERIFICATION_SECRET,
-    "15min",
-  );
-
-  await sendVerificationEmail(email, magicToken);
-
-  return vendor;
-};
-
-//! Create DeliveryMan Service
-const createDeliveryManToDB = async (payLoad: {
-  name: string;
-  email: string;
-  password: string;
-  phone: string | number;
-  vehicleType: string;
-  address?: any;
-  location?: { latitude: number; longitude: number };
-  verification?: any;
-}) => {
-  const {
-    name,
-    email,
-    password,
-    phone,
-    vehicleType,
-    address,
-    location,
-    verification,
-  } = payLoad;
-
-  const hashedPassword = await hashPassword(password);
-
-  const { user, deliveryMan } = await performDBTransaction(async (session) => {
-    // find existing user
-    let user = await User.findOne({ email }).session(session);
-
-    if (user) {
-      if (user.role === userRoles.Delivery_Man) {
-        throw new AppError("DeliveryMan already exists", 400);
-      }
-      // upgrade role and update password/name
-      user.role = userRoles.Delivery_Man;
-      user.name = name || user.name;
-      user.password = hashedPassword;
-      await user.save({ session });
-    } else {
-      // create new user as deliveryman
-      [user] = await User.create(
-        [
-          {
-            name,
-            email,
-            password: hashedPassword,
-            role: userRoles.Delivery_Man,
-          },
-        ],
-        { session },
-      );
-    }
-
-    // ensure no delivery man document exists
-    const existing = await DeliveryMan.findOne({ userId: user._id }).session(
-      session,
-    );
-
-    if (existing) {
-      throw new AppError("DeliveryMan already exists", 400);
-    }
-
-    // create delivery man document
-    const [deliveryMan] = await DeliveryMan.create(
-      [
-        {
-          userId: user._id,
-          name,
-          phone,
-          address: address || {},
-          location: location || undefined,
-          vehicleType,
-          verification: verification || {},
-        },
-      ],
-      { session },
-    );
-
-    return { user, deliveryMan };
-  });
-
-  // Generate Magic Link JWT
-  const magicToken = generateToken(
-    {
-      id: user._id,
-      email: user.email,
-    },
-    ENV.EMAIL_VERIFICATION_SECRET,
-    "15min",
-  );
-
-  await sendVerificationEmail(email, magicToken);
-
-  return deliveryMan;
 };
 
 //! Login Service
@@ -563,6 +370,4 @@ export const AuthService = {
   refreshAccessToken,
   forgotPassword,
   resetPassword,
-  createVendorToDB,
-  createDeliveryManToDB, // added
 };

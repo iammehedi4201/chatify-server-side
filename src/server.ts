@@ -1,3 +1,4 @@
+import http from "http";
 import path from "path";
 import bodyParser from "body-parser";
 import compression from "compression";
@@ -7,6 +8,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 const app = express();
+const httpServer = http.createServer(app);
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -17,4 +19,4 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan("dev"));
 
-export { app };
+export { app, httpServer };

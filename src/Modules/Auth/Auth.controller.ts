@@ -3,16 +3,6 @@ import CatchAsync from "../../Utils/CatchAsync";
 import sendResponse from "../../Utils/SendResponse";
 import { AuthService } from "./Auth.service";
 
-// const LoginUser = CatchAsync(async (req, res) => {
-//   const result = await AuthService.LoginUserToDb(req.body);
-//   sendResponse(res, {
-//     success: true,
-//     statusCode: 200,
-//     data: result,
-//     message: "User Logged In Successfully",
-//   });
-// });
-
 //! Register Customer Controller
 const registerCustomerToDB = CatchAsync(async (req, res) => {
   const result = await AuthService.registerCustomerToDB(req.body);
@@ -168,30 +158,6 @@ const resetPassword = CatchAsync(async (req, res) => {
   });
 });
 
-//! Register Vendor Controller
-const registerVendorToDB = CatchAsync(async (req, res) => {
-  const result = await AuthService.createVendorToDB(req.body);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: 201,
-    message: "Vendor registered successfully",
-    data: result,
-  });
-});
-
-//! Register DeliveryMan Controller
-const registerDeliveryManToDB = CatchAsync(async (req, res) => {
-  const result = await AuthService.createDeliveryManToDB(req.body);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: 201,
-    message: "Delivery man registered successfully",
-    data: result,
-  });
-});
-
 export const AuthController = {
   loginToDB,
   registerCustomerToDB,
@@ -201,6 +167,4 @@ export const AuthController = {
   refreshAccessToken,
   forgotPassword,
   resetPassword,
-  registerVendorToDB,
-  registerDeliveryManToDB,
 };
